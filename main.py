@@ -1,4 +1,3 @@
-import random as rand
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,7 +23,9 @@ def turn(creature, initiativeOrder):
     """
     for target in initiativeOrder:
         # Check if the target is valid (different alignment, alive, and not the same creature)
-        if target.alignment != creature.alignment and creature.isAlive() and target.name != creature.name and target.isAlive():
+        if (
+        target.alignment != creature.alignment and creature.isAlive and target.name != creature.name and target.isAlive()
+        ):
             # Uncomment the line below for debugging attack actions
             #print(f"{creature.name} attacks {target.name}!")
             creature.attack(target)  # Perform the attack
@@ -64,7 +65,7 @@ def initOrder(creatures):
     """
     Sorts the creatures by their initiative rolls in descending order.
     """
-    initiativeOrder = sorted(creatures, key=lambda creature: creature.initiativeRoll(0), reverse=True)
+    initiativeOrder = sorted(creatures, key=lambda creature: creature.initiativeRoll(), reverse=True)
     return initiativeOrder
         
 if __name__ == "__main__":
@@ -87,9 +88,7 @@ if __name__ == "__main__":
         {"name": "Hp = 7", "hitPoints": 7},   # Configuration 1: Monsters with 7 HP
         {"name": "Hp = 10", "hitPoints": 10}, # Configuration 2: Monsters with 10 HP
         {"name": "Hp = 15", "hitPoints": 15}, # Configuration 3: Monsters with 15 HP
-        {"name": "Hp = 20", "hitPoints": 20}, # Configuration 4: Monsters with 20 HP
-        {"name": "Hp = 50", "hitPoints": 200}, # Configuration 5: Monsters with 50 HP
-
+        {"name": "Hp = 20", "hitPoints": 20} # Configuration 4: Monsters with 20 HP
     ]
 
     # Create subplots for visualizing results for each player
