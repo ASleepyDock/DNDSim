@@ -1,0 +1,33 @@
+{
+    "data":{
+        "name": "Template Character",
+        "alignment": "Good",
+        "monster": false,
+
+        "maximumHitPoints": 10,
+        "armourClass": 10,
+
+        "proficiencyBonus": 0,
+
+        "stats": {
+            "strength": 10,
+            "dexterity": 10,
+            "constitution": 10,
+            "intelligence": 10,
+            "wisdom": 10,
+            "charisma": 10
+        },  
+
+        "weapons": [
+            {   
+                "name": "Dagger",
+                "priority": 1,
+                "bonus": 0,
+                "damageDie": 4,
+                "damageModifier": 0,
+                "damageType": "piercing",
+                "finesse": true
+            }
+        ] 
+    }   
+}
