@@ -1,5 +1,8 @@
 import random as rand
 import json
+import numpy as np
+
+from weapon import Weapon
 
 class Creature:
     """
@@ -29,10 +32,37 @@ class Creature:
             # Initialize basic attributes from JSON
             self.name = self.getCharacterData('name')
             self.alignment = self.getCharacterData('alignment')
+            self.monster = self.getCharacterData('monster')  # True if this is a monster, False if a player
+            
             self.maxHitPoints = self.getCharacterData('maximumHitPoints')
             self.hitPoints = self.maxHitPoints
             self.armourClass = self.getCharacterData('armourClass')
+            
+            self.proficiencyBonus = self.getCharacterData('proficiencyBonus')         
+              
             self.stats = self.getCharacterData('stats')
+
+            self.jsonWeapons = self.getCharacterData('weapons')
+
+            self.weaponsPrio = {}
+            if self.jsonWeapons:
+                for jsonWeapon in self.jsonWeapons:
+                    weapon = Weapon(
+                        jsonWeapon['name'], 
+                        jsonWeapon['priority'],
+                        jsonWeapon['bonus'],
+                        jsonWeapon['damageDie'],
+                        jsonWeapon['damageModifier'],
+                        jsonWeapon['damageType'],
+                        jsonWeapon['finesse']
+                )
+                    weapon_attr = "weapon" + jsonWeapon['name'].replace(" ", "_").capitalize()
+                    setattr(self, weapon_attr, weapon)
+                    self.weaponsPrio.update({weapon.priority:weapon_attr})
+                    
+            self.__delattr__('jsonWeapons')  # Remove jsonWeapons after loading
+            
+            self.__delattr__('characterJson')  # Remove characterJson after loading
             
     def getCharacterData(self, attrib: str):
         """
@@ -69,26 +99,22 @@ class Creature:
         Performs an attack against a target creature.
         Rolls to hit and applies damage if successful.
         """
-        toHit = rand.randint(1, 20) + self.attackBonus 
-        if toHit >= target.armourClass:
-            #print("Hit!")
-            damage = rand.randint(1, 6) + self.attackDamage
-            target.takeDamage(damage)
-        else:
-            #print("Miss!")
-            pass 
+        if not self.weaponsPrio:
+            print(f"{self.name} has no weapons to attack with!")
+            return
+        
+        # Use the highest priority weapon for the attack
+        highest_priority = max(self.weaponsPrio.keys())
+        weapon_attr = self.weaponsPrio[highest_priority]
+        getattr(self, weapon_attr).weaponsAttack(self, target)
+        
+
         
     def isAlive(self) -> bool:
         """
         Returns True if the creature is still alive (hit points > 0).
         """
         return self.hitPoints > 0
-
-    def __str__(self):
-        """
-        Returns a string representation of the creature.
-        """
-        return f"PlayerCharacter(name={self.name}, HP={self.hitPoints}, AC={self.armourClass})"
     
     def reset(self):
         """
@@ -104,8 +130,6 @@ class PlayerCharacter(Creature):
     """
     def __init__(self, filePath):
         super().__init__(filePath=filePath)
-        self.attackDamage = 2  # Base attack damage
-        self.attackBonus = 8  # Bonus to attack rolls
 
 # Class representing a monster
 class Monster(Creature):
@@ -115,5 +139,3 @@ class Monster(Creature):
     """
     def __init__(self, filePath):
         super().__init__(filePath=filePath)
-        self.attackDamage = 5
-        self.attackBonus = 4
