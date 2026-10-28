@@ -23,6 +23,7 @@ class Weapon:
         """
         Performs an attack against a target creature.
         Rolls to hit and applies damage if successful.
+        Natural 20 always hits and crits; natural 1 always misses.
         """
         
         if attacker.monster:
@@ -32,11 +33,14 @@ class Weapon:
                 toHitModifier = (attacker.stats.get('dexterity', 0) - 10) // 2 + attacker.proficiencyBonus + self.bonus
             else:  
                 toHitModifier = (attacker.stats.get('strength', 0) - 10) // 2 + attacker.proficiencyBonus + self.bonus
-        toHit = rand.randint(1, 20) + toHitModifier
-        if toHit >= target.armourClass:
+        
+        roll = rand.randint(1, 20)
+
+        if roll == 1:
+            return  # Natural 1: automatic miss
+
+        crit = roll == 20
+        if crit or roll + toHitModifier >= target.armourClass:
             #print("Hit!")
             damage = rand.randint(1, self.damageDie) + self.damageModifier
             target.takeDamage(damage)
-        else:
-            #print("Miss!")
-            pass 

@@ -15,7 +15,7 @@ class Creature:
         id: int = 0, 
         filePath: str = None
     ):
-        self.id = 0
+        self.id = id
         
         # Ensure a file path is provided for character data
         try:

@@ -24,7 +24,7 @@ def turn(creature, initiativeOrder):
     for target in initiativeOrder:
         # Check if the target is valid (different alignment, alive, and not the same creature)
         if (
-        target.alignment != creature.alignment and creature.isAlive and target.name != creature.name and target.isAlive()
+        target.alignment != creature.alignment and creature.isAlive() and target.isAlive()
         ):
             # Uncomment the line below for debugging attack actions
             #print(f"{creature.name} attacks {target.name}!")
@@ -87,8 +87,8 @@ if __name__ == "__main__":
     monsterConfigs = [
         {"name": "Hp = 7", "hitPoints": 7},   # Configuration 1: Monsters with 7 HP
         {"name": "Hp = 10", "hitPoints": 10}, # Configuration 2: Monsters with 10 HP
-        {"name": "Hp = 15", "hitPoints": 15}, # Configuration 3: Monsters with 15 HP
-        {"name": "Hp = 20", "hitPoints": 20} # Configuration 4: Monsters with 20 HP
+        {"name": "Hp = 50", "hitPoints": 50}, # Configuration 3: Monsters with 15 HP
+        {"name": "Hp = 100", "hitPoints": 100} # Configuration 4: Monsters with 20 HP
     ]
 
     # Create subplots for visualizing results for each player
@@ -97,29 +97,29 @@ if __name__ == "__main__":
     if playerCount == 1:
         axs = [axs]
 
-    # Iterate through each monster configuration
-    for config in tqdm(monsterConfigs):
-        # Initialize monsters with the current configuration's hit points
-        gobbo1 = Monster("./Characters/goblin.json")
-        gobbo1.maxHitPoints = config["hitPoints"]  # Set the hit points for the monster
-        gobbo2 = Monster("./Characters/goblin.json")
-        gobbo1.maxHitPoints = config["hitPoints"]  # Set the hit points for the monster
-        gobbo3 = Monster("./Characters/goblin.json")
-        gobbo3.maxHitPoints = config["hitPoints"]  # Set the hit points for the monster
-        gobbo4 = Monster("./Characters/goblin.json")
-        gobbo4.maxHitPoints = config["hitPoints"]  # Set the hit points for the monster
+    players = [player, player2]
 
-        # Determine the initiative order for the combat
-        initiativeOrder = initOrder([gobbo1, gobbo2, gobbo3, gobbo4, player, player2])
+    # Iterate through each monster configuration
+    for configIndex, config in enumerate(tqdm(monsterConfigs)):
+        goblins = []
+        for _ in range(4):
+            g = Monster("./Characters/goblin.json")
+            g.maxHitPoints = config["hitPoints"]
+            g.reset()  # sync current HP to the new max
+            goblins.append(g)
+
+        creatures = goblins + players
+        initiativeOrder = initOrder(creatures)
 
         # Initialize arrays to store simulation results
-        result = np.array([], dtype=bool)  # Array to store win/loss results
         finalHP = np.empty((simCount, playerCount))  # Array to store final HP of players
 
         winThreshold = 0.01  # Desired accuracy threshold for win rate
         errorMargin = 1  # Initial error margin for win rate calculation
+        winRate = 0.0
         winCount = 0
         lossCount = 0
+        totalSimulations = 0
 
         for i in tqdm(range(simCount), desc=f"Simulating {config['name']}"):
             # Stop the simulation early if the error margin is below the desired threshold
@@ -136,9 +136,6 @@ if __name__ == "__main__":
                         winCount += 1
                     else:  # If the "Evil" side won
                         lossCount += 1
-
-                    # Store the result of the simulation (win/loss)
-                    result = np.append(result, victor)
                     
                     # Store the final HP of the players for this simulation
                     finalHP[i, :] = finishHP[0]
@@ -146,9 +143,8 @@ if __name__ == "__main__":
                     # Reset all creatures for the next simulation
                     for creature in initiativeOrder:
                         creature.reset()
-                    
-                    # Reinitialize the initiative order for the next simulation
-                    initiativeOrder = initOrder([gobbo1, gobbo2, gobbo3, gobbo4, player, player2])
+
+                    initiativeOrder = initOrder(creatures)
                     break  # Exit the inner loop to start the next simulation
 
             # Check if the win rate has stabilized within the desired threshold
@@ -162,39 +158,33 @@ if __name__ == "__main__":
                 # Print the current error margin for debugging purposes
                 #print(f"\rCurrent error margin: {errorMargin:.6f}", end="")
 
-        print(f"Current win rate: {winRate:.6f} for config {config['name']}")  # Print the current win rate for debugging
+        print(f"Win rate: {winRate:.6f} for config {config['name']}")  # Print the current win rate for debugging
 
-        for i in range(playerCount):
-            
-            #Loop through each player to plot their final HP distribution.
-            #Each player's histogram is plotted on a separate subplot.
-            
-            finalHP = np.trim_zeros(finalHP)  # Remove leading and trailing zeros from the final HP array
-            hist, bins = np.histogram(finalHP[:, i], bins=10)  # Create a histogram for the player's final HP
-            histPercentage = (hist / totalSimulations) * 100  # Convert histogram counts to percentages
+        finalHP = finalHP[:totalSimulations]  # drop unused rows left by the early stop
 
-            # Plot the histogram for the current player
+        for i, p in enumerate(players):
+            # One bin per integer HP value: 0, 1, ..., maxHP
+            bins = np.arange(0, p.maxHitPoints + 2)
+            hist, _ = np.histogram(finalHP[:, i], bins=bins)
+            histPercentage = (hist / totalSimulations) * 100
+
             axs[i].bar(
-                bins[:-1],  # Bin edges (excluding the last edge)
-                histPercentage,  # Percentage of simulations in each bin
-                width=np.diff(bins),  # Width of each bar
-                edgecolor='black',  # Add a black border to the bars
-                align='edge',  # Align bars to the bin edges
-                alpha=0.5,  # Set transparency for overlapping bars
-                label=config["name"],  # Label for the current configuration
+                bins[:-1],
+                histPercentage,
+                width=1.0,           # full-width bars so configs overlap
+                align='edge',
+                alpha=0.4,           # transparency lets overlaps show through
+                edgecolor=f"C{configIndex}",
+                facecolor=f"C{configIndex}",
+                label=config["name"],
             )
 
-            # Set the x-axis label to indicate the player's name
-            axs[i].set_xlabel(f"Final HP of {finishHP[1][i].name}")
-            # Set the y-axis label to indicate the percentage of simulations
+            axs[i].set_xlabel(f"Final HP of {p.name}")
             axs[i].set_ylabel("Percentage of Simulations")
-            axs[i].set_ylim(0, 100)
+            axs[i].legend()
 
     # Set the overall title for the figure
     fig.suptitle("Distribution of Player's Final HP Across Configurations.")
-
-    # Add a legend to the figure to identify configurations
-    plt.legend()
 
     # Display the figure
     plt.show()
