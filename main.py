@@ -165,10 +165,10 @@ if __name__ == "__main__":
         print(f"Current win rate: {winRate:.6f} for config {config['name']}")  # Print the current win rate for debugging
 
         for i in range(playerCount):
-            """
-            Loop through each player to plot their final HP distribution.
-            Each player's histogram is plotted on a separate subplot.
-            """
+            
+            #Loop through each player to plot their final HP distribution.
+            #Each player's histogram is plotted on a separate subplot.
+            
             finalHP = np.trim_zeros(finalHP)  # Remove leading and trailing zeros from the final HP array
             hist, bins = np.histogram(finalHP[:, i], bins=10)  # Create a histogram for the player's final HP
             histPercentage = (hist / totalSimulations) * 100  # Convert histogram counts to percentages
@@ -191,7 +191,7 @@ if __name__ == "__main__":
             axs[i].set_ylim(0, 100)
 
     # Set the overall title for the figure
-    fig.suptitle(f"Distribution of Player's Final HP Across Configurations.")
+    fig.suptitle("Distribution of Player's Final HP Across Configurations.")
 
     # Add a legend to the figure to identify configurations
     plt.legend()
